@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Application Tracker</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="popup-shell">
+      <header class="popup-header">
+        <h1>Application Tracker</h1>
+        <p id="page-title" class="page-title">Current page</p>
+      </header>
+
+      <section class="metadata-list" aria-live="polite">
+        <div class="metadata-row">
+          <dt>Company</dt>
+          <dd id="company-name">Loading...</dd>
+        </div>
+        <div class="metadata-row">
+          <dt>Position</dt>
+          <dd id="position">Loading...</dd>
+        </div>
+        <div class="metadata-row">
+          <dt>Date Posted</dt>
+          <dd id="date-posted">Loading...</dd>
+        </div>
+        <div class="metadata-row">
+          <dt>URL</dt>
+          <dd id="website-link">Loading...</dd>
+        </div>
+      </section>
+
+      <p id="status-message" class="status-message" role="status"></p>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
