@@ -51,6 +51,29 @@ h1 {
   padding: 0;
 }
 
+.submission-summary {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #9bd5bb;
+  border-radius: 8px;
+  background: #eefbf4;
+}
+
+.submission-status {
+  margin: 0;
+  color: #14643f;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.submission-details {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
 .metadata-row {
   display: grid;
   gap: 4px;
