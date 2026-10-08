@@ -27,6 +27,9 @@
     const fallbackData = extractFallbackData(doc, locationLike);
     mergeMissingFields(applicationData, fallbackData);
 
+    const applicationFields = detectApplicationFields(doc);
+    mergeDetectedFields(applicationData, applicationFields);
+
     return applicationData;
   }
 
@@ -172,6 +175,208 @@
       () => getAttribute(doc, "time[datetime]", "datetime"),
       () => getTextContent(doc, '[itemprop="datePosted"]'),
     ]);
+  }
+
+  function detectApplicationFields(doc) {
+    const detectedFields = findApplicationFieldCandidates(doc);
+
+    return {
+      cover_letter_req: detectedFields.coverLetter.length > 0,
+      resume_req: detectedFields.resume.length > 0,
+    };
+  }
+
+  function findApplicationFieldCandidates(doc) {
+    const candidates = {
+      coverLetter: [],
+      resume: [],
+    };
+
+    if (!doc || typeof doc.querySelectorAll !== "function") {
+      return candidates;
+    }
+
+    for (const element of getApplicationFieldElements(doc)) {
+      const context = getFieldContext(element, doc);
+      if (!context.searchText) {
+        continue;
+      }
+
+      if (matchesSemanticTerms(context.searchText, RESUME_TERMS)) {
+        candidates.resume.push(context);
+      }
+
+      if (matchesSemanticTerms(context.searchText, COVER_LETTER_TERMS)) {
+        candidates.coverLetter.push(context);
+      }
+    }
+
+    return candidates;
+  }
+
+  const APPLICATION_FIELD_SELECTORS = [
+    'input[type="file"]',
+    "textarea",
+    '[contenteditable="true"]',
+    '[role="textbox"]',
+    ".ql-editor",
+    ".ProseMirror",
+  ];
+
+  const RESUME_TERMS = [
+    /\bresume\b/i,
+    /\bcv\b/i,
+    /\bcurriculum\s+vitae\b/i,
+  ];
+
+  const COVER_LETTER_TERMS = [
+    /\bcover\s+letter\b/i,
+    /\bcover[_-]?letter\b/i,
+    /\bletter\s+of\s+interest\b/i,
+    /\bmotivation\s+letter\b/i,
+  ];
+
+  function getApplicationFieldElements(doc) {
+    const elements = [];
+    const seen = new Set();
+
+    for (const selector of APPLICATION_FIELD_SELECTORS) {
+      for (const element of safeQuerySelectorAll(doc, selector)) {
+        if (!seen.has(element)) {
+          seen.add(element);
+          elements.push(element);
+        }
+      }
+    }
+
+    return elements;
+  }
+
+  function getFieldContext(element, doc) {
+    const contextParts = [
+      getAssociatedLabelText(element, doc),
+      getElementAttribute(element, "name"),
+      getElementAttribute(element, "id"),
+      getElementAttribute(element, "aria-label"),
+      getAriaLabelledByText(element, doc),
+      getElementAttribute(element, "placeholder"),
+      getElementAttribute(element, "title"),
+      getElementAttribute(element, "data-testid"),
+      getElementAttribute(element, "data-qa"),
+      getElementAttribute(element, "data-automation-id"),
+      getElementAttribute(element, "class"),
+      getSurroundingText(element),
+    ];
+
+    return {
+      element,
+      searchText: normalizeFieldSearchText(contextParts),
+    };
+  }
+
+  function getAssociatedLabelText(element, doc) {
+    const labels = [];
+
+    if (element.labels && typeof element.labels.length === "number") {
+      labels.push(...Array.from(element.labels));
+    }
+
+    const closestLabel = getClosest(element, "label");
+    if (closestLabel) {
+      labels.push(closestLabel);
+    }
+
+    const elementId = getElementAttribute(element, "id");
+    if (elementId) {
+      labels.push(...safeQuerySelectorAll(doc, `label[for="${cssAttributeEscape(elementId)}"]`));
+    }
+
+    return uniqueText(labels.map((label) => label.textContent));
+  }
+
+  function getAriaLabelledByText(element, doc) {
+    const labelledBy = getElementAttribute(element, "aria-labelledby");
+    if (!labelledBy) {
+      return null;
+    }
+
+    return uniqueText(
+      labelledBy
+        .split(/\s+/)
+        .map((id) => getElementById(doc, id))
+        .map((labelElement) => (labelElement ? labelElement.textContent : null)),
+    );
+  }
+
+  function getSurroundingText(element) {
+    const parts = [];
+    const directParent = element.parentElement;
+
+    if (directParent) {
+      parts.push(getScopedElementText(directParent));
+    }
+
+    const nearbyGroup = getClosest(
+      element,
+      "label,fieldset,[role='group'],[data-testid],[data-qa],section,div,li",
+    );
+    if (nearbyGroup && nearbyGroup !== directParent) {
+      parts.push(getScopedElementText(nearbyGroup));
+    }
+
+    return uniqueText(parts);
+  }
+
+  function getScopedElementText(element) {
+    const text = normalizeString(element ? element.textContent : null);
+    if (!text || text.length > 240) {
+      return null;
+    }
+
+    return text;
+  }
+
+  function matchesSemanticTerms(value, terms) {
+    const normalized = normalizeFieldSearchText([value]);
+    return Boolean(normalized && terms.some((term) => term.test(normalized)));
+  }
+
+  function normalizeFieldSearchText(parts) {
+    return normalizeString(
+      parts
+        .filter((part) => part !== null && part !== undefined)
+        .join(" ")
+        .replace(/[_-]+/g, " "),
+    );
+  }
+
+  function uniqueText(values) {
+    const normalizedValues = values.map(normalizeString).filter(Boolean);
+    return Array.from(new Set(normalizedValues)).join(" ");
+  }
+
+  function getClosest(element, selector) {
+    if (!element || typeof element.closest !== "function") {
+      return null;
+    }
+
+    try {
+      return element.closest(selector);
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function getElementById(doc, id) {
+    if (!doc || typeof doc.getElementById !== "function") {
+      return null;
+    }
+
+    return doc.getElementById(id);
+  }
+
+  function cssAttributeEscape(value) {
+    return String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
   }
 
   function mergeDetectedFields(target, source) {
@@ -556,6 +761,7 @@
     extractMetadata,
     extractJobPostingData,
     extractFallbackData,
+    detectApplicationFields,
   };
 
   globalScope.ApplicationMetadata = api;
