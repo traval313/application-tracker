@@ -17,6 +17,16 @@ const FIELD_CONFIG = {
     emptyText: "Not detected.",
     format: formatUrl,
   },
+  resume_req: {
+    elementId: "resume-req",
+    emptyText: "Unknown.",
+    format: formatBooleanDetection,
+  },
+  cover_letter_req: {
+    elementId: "cover-letter-req",
+    emptyText: "Unknown.",
+    format: formatBooleanDetection,
+  },
 };
 
 document.addEventListener("DOMContentLoaded", initializePopup);
@@ -51,9 +61,9 @@ function renderApplicationData(applicationData) {
   Object.entries(FIELD_CONFIG).forEach(([fieldName, config]) => {
     const element = document.getElementById(config.elementId);
     const rawValue = applicationData[fieldName];
-    const displayValue = rawValue && config.format ? config.format(rawValue) : rawValue;
+    const displayValue = config.format ? config.format(rawValue) : rawValue;
 
-    if (displayValue) {
+    if (displayValue !== null && displayValue !== undefined && displayValue !== "") {
       element.textContent = displayValue;
       element.classList.remove("empty-value");
     } else {
@@ -84,4 +94,16 @@ function formatUrl(value) {
   } catch (_error) {
     return value;
   }
+}
+
+function formatBooleanDetection(value) {
+  if (value === true) {
+    return "Detected";
+  }
+
+  if (value === false) {
+    return "Not detected";
+  }
+
+  return null;
 }
