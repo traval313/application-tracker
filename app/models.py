@@ -14,3 +14,9 @@ class Application(BaseModel):
     cover_letter_req: bool
     resume_req: bool
     response_status: str = Field(..., min_length=1)
+
+
+class ApplicationCreateResponse(BaseModel):
+    success: bool
+    message: str
+    application: Application
