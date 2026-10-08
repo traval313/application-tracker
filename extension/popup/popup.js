@@ -50,9 +50,12 @@ async function initializePopup() {
     });
 
     const applicationData = response && response.applicationData ? response.applicationData : {};
+    const submission = response && response.submission ? response.submission : {};
     renderApplicationData(applicationData);
+    renderSubmission(submission, applicationData);
   } catch (_error) {
     renderApplicationData({});
+    renderSubmission({}, {});
     statusElement.textContent = "Open a job posting page to detect metadata.";
   }
 }
@@ -71,6 +74,36 @@ function renderApplicationData(applicationData) {
       element.classList.add("empty-value");
     }
   });
+}
+
+function renderSubmission(submission, applicationData) {
+  const summaryElement = document.getElementById("submission-summary");
+  const companyElement = document.getElementById("submitted-company");
+  const positionElement = document.getElementById("submitted-position");
+
+  if (!summaryElement) {
+    return;
+  }
+
+  if (!submission || submission.status !== "submitted") {
+    summaryElement.hidden = true;
+    return;
+  }
+
+  summaryElement.hidden = false;
+  renderSubmissionValue(companyElement, submission.company_name || applicationData.company_name);
+  renderSubmissionValue(positionElement, submission.position || applicationData.position);
+}
+
+function renderSubmissionValue(element, value) {
+  if (value) {
+    element.textContent = value;
+    element.classList.remove("empty-value");
+    return;
+  }
+
+  element.textContent = "Not detected.";
+  element.classList.add("empty-value");
 }
 
 function formatDate(value) {

@@ -8,10 +8,13 @@
     "default_title": "Application Tracker",
     "default_popup": "popup/popup.html"
   },
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
-      "js": ["utils/metadata.js", "content/content.js"],
+      "js": ["utils/metadata.js", "utils/submission.js", "content/content.js"],
       "run_at": "document_idle"
     }
   ]
