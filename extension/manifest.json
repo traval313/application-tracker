@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Application Tracker",
+  "description": "Extract basic job posting metadata from the current page.",
+  "version": "0.1.0",
+  "permissions": ["activeTab"],
+  "action": {
+    "default_title": "Application Tracker",
+    "default_popup": "popup/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["utils/metadata.js", "content/content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

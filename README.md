@@ -65,3 +65,11 @@ Run a one-off Google Sheets append smoke test:
 ```bash
 python -m app.sheets_smoke_test
 ```
+
+## Chrome Extension
+
+Load the unpacked extension from the `extension/` directory in Chrome.
+
+The extension popup asks the active page's content script for an `ApplicationData`
+object. Metadata extraction prioritizes `JobPosting` JSON-LD structured data,
+then fills only missing fields from conservative DOM/page metadata fallbacks.
