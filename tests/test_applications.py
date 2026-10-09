@@ -48,6 +48,48 @@ def test_create_application_appends_application_and_returns_success(
     assert mock_append_application[0].company_name == payload["company_name"]
 
 
+def test_create_application_allows_missing_date_posted(
+    mock_append_application: list,
+) -> None:
+    payload = valid_application_payload()
+    del payload["date_posted"]
+
+    response = client.post("/applications", json=payload)
+
+    assert response.status_code == 201
+    assert response.json()["application"]["date_posted"] is None
+    assert len(mock_append_application) == 1
+    assert mock_append_application[0].date_posted is None
+
+
+def test_create_application_ignores_invalid_date_posted(
+    mock_append_application: list,
+) -> None:
+    payload = valid_application_payload()
+    payload["date_posted"] = "December 31, 1969"
+
+    response = client.post("/applications", json=payload)
+
+    assert response.status_code == 201
+    assert response.json()["application"]["date_posted"] is None
+    assert len(mock_append_application) == 1
+    assert mock_append_application[0].date_posted is None
+
+
+def test_create_application_accepts_datetime_date_posted(
+    mock_append_application: list,
+) -> None:
+    payload = valid_application_payload()
+    payload["date_posted"] = "2026-09-20T18:30:00Z"
+
+    response = client.post("/applications", json=payload)
+
+    assert response.status_code == 201
+    assert response.json()["application"]["date_posted"] == "2026-09-20"
+    assert len(mock_append_application) == 1
+    assert mock_append_application[0].date_posted.isoformat() == "2026-09-20"
+
+
 def test_create_application_returns_failure_when_append_fails(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

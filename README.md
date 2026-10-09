@@ -27,7 +27,7 @@ uvicorn app.main:app --reload
 Create an application:
 
 ```bash
-curl -X POST http://127.0.0.1:8000/applications \
+curl -X POST https://application-tracker-qi7c.onrender.com/applications \
   -H "Content-Type: application/json" \
   -d '{
     "company_name": "Figma",

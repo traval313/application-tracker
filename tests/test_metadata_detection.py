@@ -383,7 +383,107 @@ def test_detects_application_submission_success_signals() -> None:
           source: "form_submit",
           company_name: "Figma",
           position: "Software Engineering Intern",
+          application_data: {
+            company_name: "Figma",
+            position: "Software Engineering Intern",
+            website_link: null,
+            date_posted: null,
+            date_applied: null,
+            cover_letter_req: null,
+            resume_req: null,
+            response_status: null,
+          },
         });
+
+        const finalApplication = submission.buildFinalApplication(
+          {
+            company_name: "Figma",
+            position: "Software Engineering Intern",
+            website_link: "https://www.figma.com/careers/job/123",
+            date_posted: "2026-09-20T18:30:00Z",
+            cover_letter_req: false,
+            resume_req: true,
+          },
+          { today: () => new Date("2026-10-08T12:00:00Z") },
+        );
+
+        assert.deepEqual(finalApplication, {
+          company_name: "Figma",
+          position: "Software Engineering Intern",
+          website_link: "https://www.figma.com/careers/job/123",
+          date_posted: "2026-09-20",
+          date_applied: "2026-10-08",
+          cover_letter_req: false,
+          resume_req: true,
+          response_status: "Applied",
+        });
+        assert.deepEqual(submission.validateFinalApplication(finalApplication), {
+          valid: true,
+          missingFields: [],
+        });
+
+        const applicationWithoutDatePosted = submission.buildFinalApplication(
+          {
+            company_name: "Figma",
+            position: "Software Engineering Intern",
+            website_link: "https://www.figma.com/careers/job/123",
+            resume_req: true,
+          },
+          { dateApplied: "2026-10-08" },
+        );
+
+        assert.deepEqual(applicationWithoutDatePosted, {
+          company_name: "Figma",
+          position: "Software Engineering Intern",
+          website_link: "https://www.figma.com/careers/job/123",
+          date_posted: null,
+          date_applied: "2026-10-08",
+          cover_letter_req: false,
+          resume_req: true,
+          response_status: "Applied",
+        });
+        assert.deepEqual(submission.validateFinalApplication(applicationWithoutDatePosted), {
+          valid: true,
+          missingFields: [],
+        });
+
+        assert.equal(
+          submission.buildFinalApplication(
+            {
+              company_name: "Figma",
+              position: "Software Engineering Intern",
+              website_link: "https://www.figma.com/careers/job/123",
+              date_posted: "2026-09-20",
+            },
+            { dateApplied: "2026-10-08" },
+          ).date_posted,
+          "2026-09-20",
+        );
+
+        assert.deepEqual(
+          submission.buildFinalApplication(
+            {
+              company_name: "Gleanwork",
+              position: "Software Engineer, Intern (Summer 2027)",
+              website_link: "job-boards.greenhouse.io/gleanwork/jobs/4595665005/confirmation",
+              date_posted: "December 31, 1969",
+            },
+            {
+              dateApplied: "2026-10-08",
+              originalUrl: "https://job-boards.greenhouse.io/gleanwork/jobs/4595665005",
+            },
+          ),
+          {
+            company_name: "Gleanwork",
+            position: "Software Engineer, Intern (Summer 2027)",
+            website_link: "https://job-boards.greenhouse.io/gleanwork/jobs/4595665005",
+            date_posted: null,
+            date_applied: "2026-10-08",
+            cover_letter_req: false,
+            resume_req: false,
+            response_status: "Applied",
+          },
+        );
         """
     )
 
