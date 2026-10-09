@@ -51,11 +51,17 @@ async function initializePopup() {
 
     const applicationData = response && response.applicationData ? response.applicationData : {};
     const submission = response && response.submission ? response.submission : {};
+    const backendUpdate = response && response.backendUpdate ? response.backendUpdate : {};
     renderApplicationData(applicationData);
     renderSubmission(submission, applicationData);
+    renderBackendUpdate(backendUpdate);
+    if (backendUpdate.status === "pending") {
+      window.setTimeout(initializePopup, 1000);
+    }
   } catch (_error) {
     renderApplicationData({});
     renderSubmission({}, {});
+    renderBackendUpdate({});
     statusElement.textContent = "Open a job posting page to detect metadata.";
   }
 }
@@ -93,6 +99,36 @@ function renderSubmission(submission, applicationData) {
   summaryElement.hidden = false;
   renderSubmissionValue(companyElement, submission.company_name || applicationData.company_name);
   renderSubmissionValue(positionElement, submission.position || applicationData.position);
+}
+
+function renderBackendUpdate(backendUpdate) {
+  const summaryElement = document.getElementById("backend-summary");
+  const statusElement = document.getElementById("backend-status");
+  const messageElement = document.getElementById("backend-message");
+
+  if (!summaryElement || !statusElement || !messageElement) {
+    return;
+  }
+
+  const status = backendUpdate && backendUpdate.status ? backendUpdate.status : "idle";
+  if (status === "idle") {
+    summaryElement.hidden = true;
+    return;
+  }
+
+  summaryElement.hidden = false;
+  summaryElement.classList.remove("pending", "success", "error");
+  summaryElement.classList.add(status === "success" ? "success" : status === "error" ? "error" : "pending");
+
+  if (status === "success") {
+    statusElement.textContent = "Spreadsheet updated";
+  } else if (status === "error") {
+    statusElement.textContent = "Spreadsheet update failed";
+  } else {
+    statusElement.textContent = "Spreadsheet update pending";
+  }
+
+  messageElement.textContent = backendUpdate.message || "";
 }
 
 function renderSubmissionValue(element, value) {

@@ -144,6 +144,7 @@
     function recordSubmissionAttempt(source, element) {
       const submittedAt = new Date(now()).toISOString();
       const applicationData = metadataProvider() || {};
+      const normalizedApplicationData = normalizeApplicationData(applicationData);
 
       state = {
         status: "pending_confirmation",
@@ -154,8 +155,9 @@
         original_url: lastUrl,
         current_url: locationLike && locationLike.href ? locationLike.href : lastUrl,
         source,
-        company_name: normalizeString(applicationData.company_name),
-        position: normalizeString(applicationData.position),
+        company_name: normalizedApplicationData.company_name,
+        position: normalizedApplicationData.position,
+        application_data: normalizedApplicationData,
       };
 
       saveState(storage, state);
@@ -402,6 +404,7 @@
         source: null,
         company_name: null,
         position: null,
+        application_data: normalizeApplicationData(null),
       };
     }
 
@@ -416,7 +419,97 @@
       source: normalizeString(rawState.source),
       company_name: normalizeString(rawState.company_name),
       position: normalizeString(rawState.position),
+      application_data: normalizeApplicationData(rawState.application_data),
     };
+  }
+
+  function buildFinalApplication(applicationData, options = {}) {
+    const normalizedApplicationData = normalizeApplicationData(applicationData);
+    const dateApplied =
+      normalizeString(options.dateApplied) ||
+      formatDateOnly(
+        typeof options.today === "function" ? options.today() : new Date(),
+      );
+
+    return {
+      company_name: normalizedApplicationData.company_name,
+      position: normalizedApplicationData.position,
+      website_link: normalizedApplicationData.website_link,
+      date_posted: normalizeDateOnly(normalizedApplicationData.date_posted),
+      date_applied: dateApplied,
+      cover_letter_req: normalizedApplicationData.cover_letter_req === true,
+      resume_req: normalizedApplicationData.resume_req === true,
+      response_status: "Applied",
+    };
+  }
+
+  function validateFinalApplication(application) {
+    const missingFields = [];
+
+    for (const fieldName of ["company_name", "position", "website_link", "date_applied"]) {
+      if (!normalizeString(application && application[fieldName])) {
+        missingFields.push(fieldName);
+      }
+    }
+
+    return {
+      valid: missingFields.length === 0,
+      missingFields,
+    };
+  }
+
+  function normalizeApplicationData(applicationData) {
+    const rawData = applicationData && typeof applicationData === "object" ? applicationData : {};
+
+    return {
+      company_name: normalizeString(rawData.company_name),
+      position: normalizeString(rawData.position),
+      website_link: normalizeString(rawData.website_link),
+      date_posted: normalizeString(rawData.date_posted),
+      date_applied: normalizeString(rawData.date_applied),
+      cover_letter_req: normalizeBoolean(rawData.cover_letter_req),
+      resume_req: normalizeBoolean(rawData.resume_req),
+      response_status: normalizeString(rawData.response_status),
+    };
+  }
+
+  function normalizeDateOnly(value) {
+    const normalized = normalizeString(value);
+    if (!normalized) {
+      return null;
+    }
+
+    const dateOnlyMatch = normalized.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (dateOnlyMatch) {
+      return dateOnlyMatch[1];
+    }
+
+    const date = new Date(normalized);
+    if (Number.isNaN(date.getTime())) {
+      return normalized;
+    }
+
+    return formatDateOnly(date);
+  }
+
+  function formatDateOnly(date) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+      return null;
+    }
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  function normalizeBoolean(value) {
+    if (typeof value === "boolean") {
+      return value;
+    }
+
+    return null;
   }
 
   function getSubmissionNotificationKey(state) {
@@ -523,9 +616,11 @@
 
   const api = {
     createApplicationSubmissionDetector,
+    buildFinalApplication,
     detectSubmissionSuccess,
     isApplicationLikeForm,
     matchesSuccessLanguage,
+    validateFinalApplication,
   };
 
   globalScope.ApplicationSubmission = api;

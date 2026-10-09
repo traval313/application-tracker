@@ -34,7 +34,7 @@ def append_application(application: Application) -> dict[str, Any]:
         .append(
             spreadsheetId=sheet_id,
             range=f"{_quote_sheet_name(sheet_name)}!A:H",
-            valueInputOption="USER_ENTERED",
+            valueInputOption="RAW",
             insertDataOption="INSERT_ROWS",
             body={"values": [row]},
         )
@@ -44,7 +44,22 @@ def append_application(application: Application) -> dict[str, Any]:
 
 def application_to_row(application: Application) -> list[Any]:
     data = application.model_dump(mode="json")
-    return [data[column] for column in APPLICATION_COLUMNS]
+    return [_format_sheet_value(column, data[column]) for column in APPLICATION_COLUMNS]
+
+
+def _format_sheet_value(column: str, value: Any) -> Any:
+    if value is None:
+        return ""
+
+    if column in {"date_posted", "date_applied"}:
+        return _format_sheet_date(str(value))
+
+    return value
+
+
+def _format_sheet_date(value: str) -> str:
+    year, month, day = value.split("-")
+    return f"{int(month)}/{int(day)}"
 
 
 def get_sheets_service() -> Any:
