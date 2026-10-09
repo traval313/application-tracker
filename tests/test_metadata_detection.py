@@ -459,6 +459,31 @@ def test_detects_application_submission_success_signals() -> None:
           ).date_posted,
           "2026-09-20",
         );
+
+        assert.deepEqual(
+          submission.buildFinalApplication(
+            {
+              company_name: "Gleanwork",
+              position: "Software Engineer, Intern (Summer 2027)",
+              website_link: "job-boards.greenhouse.io/gleanwork/jobs/4595665005/confirmation",
+              date_posted: "December 31, 1969",
+            },
+            {
+              dateApplied: "2026-10-08",
+              originalUrl: "https://job-boards.greenhouse.io/gleanwork/jobs/4595665005",
+            },
+          ),
+          {
+            company_name: "Gleanwork",
+            position: "Software Engineer, Intern (Summer 2027)",
+            website_link: "https://job-boards.greenhouse.io/gleanwork/jobs/4595665005",
+            date_posted: null,
+            date_applied: "2026-10-08",
+            cover_letter_req: false,
+            resume_req: false,
+            response_status: "Applied",
+          },
+        );
         """
     )
 

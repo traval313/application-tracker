@@ -36,7 +36,9 @@
   function notifySubmitted(submission) {
     const applicationData =
       submission && submission.application_data ? submission.application_data : readApplicationData();
-    const application = window.ApplicationSubmission.buildFinalApplication(applicationData);
+    const application = window.ApplicationSubmission.buildFinalApplication(applicationData, {
+      originalUrl: submission && submission.original_url,
+    });
     const validation = window.ApplicationSubmission.validateFinalApplication(application);
 
     if (!validation.valid) {

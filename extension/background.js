@@ -90,6 +90,19 @@ function getErrorMessage(body) {
     return body.message;
   }
 
+  if (Array.isArray(body.detail)) {
+    const fieldErrors = body.detail
+      .map((item) => {
+        const location = Array.isArray(item.loc) ? item.loc.filter((part) => part !== "body").join(".") : null;
+        return location && item.msg ? `${location}: ${item.msg}` : item && item.msg;
+      })
+      .filter(Boolean);
+
+    if (fieldErrors.length > 0) {
+      return `Backend rejected the application: ${fieldErrors.join("; ")}.`;
+    }
+  }
+
   return null;
 }
 
