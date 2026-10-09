@@ -1,3 +1,5 @@
+const APPLICATION_TRACKER_API_URL = "https://application-tracker-qi7c.onrender.com/applications";
+
 chrome.runtime.onMessage.addListener((message, sender) => {
   if (!message || message.type !== "APPLICATION_SUBMITTED") {
     return false;
@@ -28,7 +30,7 @@ async function handleApplicationSubmitted(message, sender) {
 
 async function postApplication(application) {
   try {
-    const response = await fetch("http://127.0.0.1:8000/applications", {
+    const response = await fetch(APPLICATION_TRACKER_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
